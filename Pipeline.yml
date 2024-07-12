@@ -41,4 +41,5 @@ steps:
   inputs:
     provider: 'azurerm'
     command: 'apply'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/environments/prod'
     environmentServiceNameAzureRM: 'Service connection pipeline classic'
