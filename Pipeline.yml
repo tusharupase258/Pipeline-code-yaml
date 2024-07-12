@@ -39,8 +39,8 @@ steps:
 
 - task: TerraformTaskV4@4
   displayName: 'Terraform Apply'
-    inputs:
-      provider: 'azurerm'
-      command: 'apply'
-      workingDirectory: 'environments/prod'
-      environmentServiceNameAzureRM: 'Service connection pipeline classic'
+  inputs:
+    provider: 'azurerm'
+    command: 'apply'
+    workingDirectory: 'environments/prod'
+    environmentServiceNameAzureRM: 'Service connection pipeline classic'
