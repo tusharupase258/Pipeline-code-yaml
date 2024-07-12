@@ -38,23 +38,10 @@ steps:
     environmentServiceNameAzureRM: 'Service connection pipeline classic'
     backendAzureRmContainerName: 'ppipecontainer'
     backendAzureRmKey: 'tfprod/terraform.tfstate'
-  
-- task: TerraformTaskV4@4
-  displayName: 'Terraform plan'
-  inputs:
-    provider: 'azurerm'
-    command: 'plan'
+
 - task: TerraformTaskV4@4
   inputs:
     provider: 'azurerm'
     command: 'apply'
     workingDirectory: 'environments/prod'
-    environmentServiceNameAzureRM: 'Service connection pipeline classic'
-
-- task: TerraformTaskV4@4
-  displayName: 'Terraform Apply'
-  inputs:
-    provider: 'azurerm'
-    command: 'apply'
-    workingDirectory: '$(System.DefaultWorkingDirectory)/environments/prod'
     environmentServiceNameAzureRM: 'Service connection pipeline classic'
