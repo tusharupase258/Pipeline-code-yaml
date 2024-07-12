@@ -13,12 +13,12 @@ trigger:
 pool: Default
 
 steps:
-  - task: TerraformInstaller
+  - task: TeTerraformInstaller@0
     displayName: "Terraform Tool Installer"
     inputs:
       terraformVersion: 'latest'
 
-  - task: TerraformTask@init
+  - task: Terraform@4
     displayName: 'Terraform Init'
     inputs:
       provider: 'azurerm'
@@ -30,7 +30,7 @@ steps:
       backendAzureRmContainerName: 'ppipecontainer'
       backendAzureRmKey: 'tfprod/terraform.tfstate'
 
-  - task: TerraformTask@Plan
+  - task: Terraform@4
     displayName: 'Terraform Plan'
     inputs:
       provider: 'azurerm'
@@ -39,7 +39,7 @@ steps:
       backendServiceArm: 'Service connection pipeline classic'
 
 
-  - task: TerraformTask@Apply
+  - task: Terraform@4
     displayName: 'Terraform Apply'
     inputs:
       provider: 'azurerm'
