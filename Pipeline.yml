@@ -8,6 +8,8 @@ trigger:
   paths:
     include:
     - environments/prod
+    exclude:
+    - environments/dev
 
 pool: Default
 
@@ -26,6 +28,8 @@ steps:
     backendServiceArm: 'Service connection pipeline classic'
     backendAzureRmResourceGroupName: 'Donotdeletewipforpipe'
     backendAzureRmStorageAccountName: 'ppipestoragetu'
+    backendAzureRmContainerName: 'ppipecontainer'
+    backendAzureRmKey: 'prodtf/terraform.tfstate'
 - task: TerraformTaskV4@4
   inputs:
     provider: 'azurerm'
