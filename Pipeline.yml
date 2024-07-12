@@ -24,7 +24,6 @@ steps:
   inputs:
     provider: 'azurerm'
     command: 'init'
-    workingDirectory: 'environments/prod'
     backendServiceArm: 'Service connection pipeline classic'
     backendAzureRmResourceGroupName: 'Donotdeletewipforpipe'
     backendAzureRmStorageAccountName: 'ppipestoragetu'
