@@ -22,7 +22,7 @@ steps:
   inputs:
     provider: 'azurerm'
     command: 'init'
-    workingDirectory: '$environments/prod'
+    workingDirectory: 'environments/prod'
     backendServiceArm: 'Service connection pipeline classic'
     backendAzureRmResourceGroupName: 'Donotdeletewipforpipe'
     backendAzureRmStorageAccountName: 'ppipestoragetu'
@@ -34,7 +34,7 @@ steps:
   inputs:
     provider: 'azurerm'
     command: 'plan'
-    workingDirectory: '$environments/prod'
+    workingDirectory: 'environments/prod'
     environmentServiceNameAzureRM: 'Service connection pipeline classic'
 
 - task: TerraformTaskV4@4
