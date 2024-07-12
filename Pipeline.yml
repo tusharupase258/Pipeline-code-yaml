@@ -30,14 +30,13 @@ steps:
     backendAzureRmStorageAccountName: 'ppipestoragetu'
     backendAzureRmContainerName: 'ppipecontainer'
     backendAzureRmKey: 'prodtf/terraform.tfstate'
+
 - task: TerraformTaskV4@4
   inputs:
     provider: 'azurerm'
     command: 'plan'
     workingDirectory: 'environments/prod'
     environmentServiceNameAzureRM: 'Service connection pipeline classic'
-    backendAzureRmContainerName: 'ppipecontainer'
-    backendAzureRmKey: 'tfprod/terraform.tfstate'
 
 - task: TerraformTaskV4@4
   inputs:
