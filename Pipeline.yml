@@ -12,10 +12,10 @@ trigger:
 pool: Default
 
 steps:
-#- task: TerraformInstaller@0
-  #displayName: "Terraform Tool Installer"
-  #inputs:
-    #terraformVersion: 'latest'
+- task: TerraformInstaller@0
+  displayName: "Terraform Tool Installer"
+  inputs:
+    terraformVersion: 'latest'
 
 - task: TerraformTaskV4@4
   displayName: 'Terraform Init'
