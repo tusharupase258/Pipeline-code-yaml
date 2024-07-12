@@ -22,9 +22,16 @@ steps:
   inputs:
     provider: 'azurerm'
     command: 'init'
+    workingDirectory: 'environments/prod'
     backendServiceArm: 'Service connection pipeline classic'
     backendAzureRmResourceGroupName: 'Donotdeletewipforpipe'
     backendAzureRmStorageAccountName: 'ppipestoragetu'
+- task: TerraformTaskV4@4
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    workingDirectory: 'environments/prod'
+    environmentServiceNameAzureRM: 'Service connection pipeline classic'
     backendAzureRmContainerName: 'ppipecontainer'
     backendAzureRmKey: 'tfprod/terraform.tfstate'
   
