@@ -1,0 +1,48 @@
+---
+name: New-tus-pipel-prod
+
+trigger:
+  branches:
+    include:
+      - main
+
+  paths:
+    include:
+      - environments/prod
+
+pool: Default
+
+steps:
+  - task: TerraformInstaller
+    displayName: "Terraform Tool Installer"
+    inputs:
+      terraformVersion: 'latest'
+
+  - task: TerraformTask@init
+    displayName: 'Terraform Init'
+    inputs:
+      provider: 'azurerm'
+      command: 'init'
+      workingDirectory: '$environments/prod'
+      backendServiceArm: 'Service connection pipeline classic'
+      backendAzureRmResourceGroupName: 'Donotdeletewipforpipe'
+      backendAzureRmStorageAccountName: 'ppipestoragetu'
+      backendAzureRmContainerName: 'ppipecontainer'
+      backendAzureRmKey: 'tfprod/terraform.tfstate'
+
+  - task: TerraformTask@Plan
+    displayName: 'Terraform Plan'
+    inputs:
+      provider: 'azurerm'
+      command: 'plan'
+      workingDirectory: '$environments/prod'
+      backendServiceArm: 'Service connection pipeline classic'
+
+
+  - task: TerraformTask@Apply
+    displayName: 'Terraform Apply'
+    inputs:
+      provider: 'azurerm'
+      command: 'apply'
+      workingDirectory: '$environments/prod'
+      backendServiceArm: 'Service connection pipeline classic'
