@@ -33,6 +33,7 @@ steps:
   inputs:
     provider: 'azurerm'
     command: 'plan'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/environments/prod'
     environmentServiceNameAzureRM: 'Service connection pipeline classic'
 
 - task: TerraformTaskV4@4
