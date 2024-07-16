@@ -31,15 +31,15 @@ steps:
     backendAzureRmKey: 'prodtf/terraform.tfstate'
 
 - task: TerraformTaskV4@4
+  displayName: "Terraform plan"
   inputs:
     provider: 'azurerm'
     command: 'plan'
-    workingDirectory: 'environments/prod'
     environmentServiceNameAzureRM: 'Service connection pipeline classic'
 
 - task: TerraformTaskV4@4
+  displayName: "Terraform apply"
   inputs:
     provider: 'azurerm'
     command: 'apply'
-    workingDirectory: 'environments/prod'
     environmentServiceNameAzureRM: 'Service connection pipeline classic'
