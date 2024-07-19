@@ -1,7 +1,22 @@
+This YAML pipeline includes a manual validation step between the Terraform planning and applying stages. Below, I'll explain the entire process and the key components of the pipeline.
+
+### Pipeline Breakdown
+
+#### 1. Pipeline Header
+
+```yaml
 name: yaml_pipeline_with_manual_validation
 trigger: none
 pool: Default
+```
 
+- **name**: The name of the pipeline.
+- **trigger**: Set to `none`, meaning the pipeline will not automatically trigger on code commits or other events.
+- **pool**: Specifies the default agent pool for the pipeline.
+
+#### 2. Terraform Initialization and Planning Stage
+
+```yaml
 stages:
 - stage: TerraformInitPlan
   displayName: Terraform Init & Plan
@@ -41,7 +56,15 @@ stages:
         provider: 'azurerm'
         command: 'plan'
         environmentServiceNameAzureRM: 'service principle tushar'
+```
 
+- **TerraformInitPlan Stage**: This stage performs Terraform initialization, formatting, validation, and planning.
+  - **TerraformInstaller@1**: Installs the latest version of Terraform.
+  - **TerraformTaskV4@4**: Runs Terraform commands (`init`, `fmt`, `validate`, `plan`) with specified configurations.
+
+#### 3. Manual Validation Stage
+
+```yaml
 - stage: Manualvalidation
   displayName: Manualvalidation
   pool: Default
@@ -56,7 +79,14 @@ stages:
             notifyUsers: 'tusharupase786@gmail.com'
             approvers: 'tusharupase786@gmail.com'
             instructions: 'Please verify the plan & approve'
+```
 
+- **Manualvalidation Stage**: This stage pauses the pipeline and waits for manual approval.
+  - **ManualValidation@1**: A custom task (replace with appropriate task or gate in your CI/CD tool) that sends a notification to the specified user (`notifyUsers`) and requires approval from the specified approvers (`approvers`). The `instructions` field provides context for what needs to be validated.
+
+#### 4. Terraform Apply Stage
+
+```yaml
 - stage: Terraformapply
   displayName: Terraformapply
   pool: Default
@@ -77,6 +107,23 @@ stages:
             backendAzureRmKey: 'yaml.tfstate'
         - task: TerraformTaskV4@4
           displayName: TerraformApply
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            environmentServiceNameAzureRM: 'service principle tushar'
+```
+
+- **Terraformapply Stage**: This stage re-initializes and applies the Terraform plan after manual approval.
+  - **Terraform-re-init**: Re-runs the `init` command to ensure the environment is set up correctly.
+  - **TerraformApply**: Applies the Terraform plan to create or update the resources.
+
+### Key Points
+
+- **Manual Validation**: This step ensures human intervention before proceeding with critical changes, adding a layer of safety and review.
+- **Re-initialization**: It's good practice to re-initialize Terraform to ensure the environment is up to date before applying changes.
+- **Notifications and Approvals**: Use appropriate email addresses and approver lists to notify and get approvals from relevant stakeholders.
+
+This pipeline setup helps manage infrastructure changes with greater control, ensuring that potentially impactful operations are carefully reviewed before execution.
           inputs:
             provider: 'azurerm'
             command: 'apply'
