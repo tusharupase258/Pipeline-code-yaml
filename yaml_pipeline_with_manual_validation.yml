@@ -1,0 +1,83 @@
+name: yaml_pipeline_with_manual_validation
+trigger: none
+pool: Default
+
+stages:
+- stage: TerraformInitPlan
+  displayName: Terraform Init & Plan
+  pool: Default
+  jobs:
+  - job: TerraformInitPlan
+    steps:
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: 'latest'
+    - task: TerraformTaskV4@4
+      displayName: TerraformInit
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'service principle tushar'
+        backendAzureRmResourceGroupName: 'Donotdeletewipforpipe'
+        backendAzureRmStorageAccountName: 'ppipestoragetu1'
+        backendAzureRmContainerName: 'ppipecontainer'
+        backendAzureRmKey: 'yaml.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: Terraformfmt
+      inputs:
+        provider: 'azurerm'
+        command: 'custom'
+        outputTo: 'console'
+        customCommand: 'fmt'
+        environmentServiceNameAzureRM: 'service principle tushar'
+    - task: TerraformTaskV4@4
+      displayName: TerraformValidate
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+    - task: TerraformTaskV4@4
+      displayName: TerraformPlan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: 'service principle tushar'
+
+- stage: Manualvalidation
+  displayName: Manualvalidation
+  pool: Default
+  dependsOn: TerraformInitPlan
+  jobs:
+    - job: ManualApproval
+      displayName: ManualApproval
+      pool: Server
+      steps:
+        - task: ManualValidation@1
+          inputs:
+            notifyUsers: 'tusharupase786@gmail.com'
+            approvers: 'tusharupase786@gmail.com'
+            instructions: 'Please verify the plan & approve'
+
+- stage: Terraformapply
+  displayName: Terraformapply
+  pool: Default
+  dependsOn: Manualvalidation
+  jobs:
+    - job: Terraformapply
+      displayName: Terraformapply
+      steps:
+        - task: TerraformTaskV4@4
+          displayName: Terraform-re-init
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: 'service principle tushar'
+            backendAzureRmResourceGroupName: 'Donotdeletewipforpipe'
+            backendAzureRmStorageAccountName: 'ppipestoragetu1'
+            backendAzureRmContainerName: 'ppipecontainer'
+            backendAzureRmKey: 'yaml.tfstate'
+        - task: TerraformTaskV4@4
+          displayName: TerraformApply
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            environmentServiceNameAzureRM: 'service principle tushar'
