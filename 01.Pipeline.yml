@@ -1,3 +1,119 @@
+This YAML pipeline is designed to manage Terraform deployments to a production environment, triggered by changes to the `main` branch and specific paths in the repository. Let's break down and explain each component of the pipeline.
+
+### Pipeline Breakdown
+
+#### 1. Pipeline Header
+
+```yaml
+---
+name: New-tus-pipel-prod
+
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - environments/prod
+    exclude:
+    - environments/dev
+
+pool: Default
+```
+
+- **name**: Specifies the name of the pipeline (`New-tus-pipel-prod`).
+- **trigger**: 
+  - **branches**: The pipeline triggers on commits to the `main` branch.
+  - **paths**:
+    - **include**: Triggers only if changes occur in the `environments/prod` directory.
+    - **exclude**: Ignores changes in the `environments/dev` directory.
+- **pool**: Specifies the default agent pool (`Default`) where the pipeline will run.
+
+#### 2. Terraform Tool Installer
+
+```yaml
+steps:
+- task: TerraformInstaller@0
+  displayName: "Terraform Tool Installer"
+  inputs:
+    terraformVersion: 'latest'
+```
+
+- **TerraformInstaller@0**: This task installs the specified version of Terraform.
+  - **terraformVersion**: Installs the latest version of Terraform. This ensures the environment has the required Terraform version for subsequent tasks.
+
+#### 3. Terraform Initialization
+
+```yaml
+- task: TerraformTaskV4@4
+  displayName: 'Terraform Init'
+  inputs:
+    provider: 'azurerm'
+    command: 'init'
+    backendServiceArm: 'Service connection pipeline classic'
+    backendAzureRmResourceGroupName: 'Donotdeletewipforpipe'
+    backendAzureRmStorageAccountName: 'ppipestoragetu'
+    backendAzureRmContainerName: 'ppipecontainer'
+    backendAzureRmKey: 'prodtf/terraform.tfstate'
+```
+
+- **TerraformTaskV4@4**: This task runs Terraform commands.
+  - **displayName**: 'Terraform Init', indicates the task's purpose.
+  - **provider**: Specifies the cloud provider (`azurerm` for Azure).
+  - **command**: The Terraform command to execute (`init`).
+  - **backendServiceArm**: The Azure service connection used to authenticate.
+  - **backendAzureRmResourceGroupName**: The name of the Azure Resource Group used for storing the state file.
+  - **backendAzureRmStorageAccountName**: The Azure Storage Account used for the backend.
+  - **backendAzureRmContainerName**: The container within the storage account for the state file.
+  - **backendAzureRmKey**: The key or path to the state file within the container.
+
+#### 4. Terraform Plan
+
+```yaml
+- task: TerraformTaskV4@4
+  displayName: "Terraform plan"
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    environmentServiceNameAzureRM: 'Service connection pipeline classic'
+```
+
+- **TerraformTaskV4@4**: This task runs Terraform commands.
+  - **displayName**: 'Terraform plan', indicates the task's purpose.
+  - **provider**: Specifies the cloud provider (`azurerm` for Azure).
+  - **command**: The Terraform command to execute (`plan`).
+  - **environmentServiceNameAzureRM**: The Azure service connection used to authenticate.
+
+#### 5. Terraform Apply
+
+```yaml
+- task: TerraformTaskV4@4
+  displayName: "Terraform apply"
+  inputs:
+    provider: 'azurerm'
+    command: 'apply'
+    environmentServiceNameAzureRM: 'Service connection pipeline classic'
+```
+
+- **TerraformTaskV4@4**: This task runs Terraform commands.
+  - **displayName**: 'Terraform apply', indicates the task's purpose.
+  - **provider**: Specifies the cloud provider (`azurerm` for Azure).
+  - **command**: The Terraform command to execute (`apply`).
+  - **environmentServiceNameAzureRM**: The Azure service connection used to authenticate.
+
+### Summary
+
+1. **Pipeline Initialization**: The pipeline is named `New-tus-pipel-prod` and is set to trigger on changes to the `main` branch and within the `environments/prod` path, while excluding changes in the `environments/dev` path.
+2. **Terraform Tool Installation**: The pipeline installs the latest version of Terraform to ensure the correct tools are available for subsequent steps.
+3. **Terraform Init**: Initializes the Terraform configuration, setting up the backend to store the state file in an Azure Storage Account.
+4. **Terraform Plan**: Creates an execution plan showing what actions Terraform will perform to achieve the desired state. This step helps in reviewing the changes before applying them.
+5. **Terraform Apply**: Applies the Terraform plan to create, update, or delete the resources as defined in the configuration files. This is the actual deployment step.
+
+This pipeline setup ensures that changes to the production environment are controlled, reviewed, and applied systematically, leveraging the power of Terraform for infrastructure as code and Azure DevOps for continuous integration and deployment.
+
+Here the final yaml pipeline code :
+
+```yaml
 ---
 name: New-tus-pipel-prod
 
