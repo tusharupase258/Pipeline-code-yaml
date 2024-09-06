@@ -1,0 +1,104 @@
+name: Infrastructure_deployment pipeline
+
+trigger: none
+
+pool: Default
+
+stages:
+- stage: TerraformInit
+  jobs:
+  - job: TerraformInitJob
+    displayName: Terraform Init
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: TerraformInit
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure_Setup_tushar/01.Modules'
+        commandOptions: '-reconfigure'
+        backendServiceArm: 'tushar_SP'
+        backendAzureRmResourceGroupName: 'Tushar_Backend'
+        backendAzureRmStorageAccountName: 'ppipestoragetu2'
+        backendAzureRmContainerName: 'ppipecontainer'
+        backendAzureRmKey: 'infrastructuredeploy.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: TerraformFMT
+      inputs:
+        provider: 'azurerm'
+        command: 'custom'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure_Setup_tushar/01.Modules'
+        outputTo: 'console'
+        customCommand: 'fmt'
+        environmentServiceNameAzureRM: 'tushar_SP'
+    - task: TerraformTaskV4@4
+      displayName: TerraformValidate
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure_Setup_tushar/01.Modules'
+
+- stage: TerraformPlan
+  jobs:
+  - job: TerraformPlanJob
+    displayName: TerraformPlan
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: Terraform_Re-Init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure_Setup_tushar/01.Modules'
+        commandOptions: '-reconfigure'
+        backendServiceArm: 'tushar_SP'
+        backendAzureRmResourceGroupName: 'Tushar_Backend'
+        backendAzureRmStorageAccountName: 'ppipestoragetu2'
+        backendAzureRmContainerName: 'ppipecontainer'
+        backendAzureRmKey: 'infrastructuredeploy.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: Terraform Plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure_Setup_tushar/01.Modules'
+        environmentServiceNameAzureRM: 'tushar_SP'
+
+- stage: Manual_Approval
+  displayName: Manual_Approval
+  jobs:
+  - job: Manual_Approval
+    displayName : Manual_Approval
+    pool: Server
+    steps:
+    - task: ManualValidation@1
+      inputs:
+        notifyUsers: 'tusharupase786@gmail.com,tusharupase111@gmail.com'
+        approvers: 'tusharupase786@gmail.com, tusharupase111@gmail.com'
+        instructions: 'Please check the plan & approve the same for further deploying the same'
+
+- stage: Terraform_Apply
+  displayName : Terraform_Apply
+  dependsOn: Manual_Approval
+  jobs:
+  - job: Terraform_Apply
+    displayName: Terraform_Apply
+    steps :
+    - task: TerraformTaskV4@4
+      displayName: Terraform_Re-Init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure_Setup_tushar/01.Modules'
+        commandOptions: '-reconfigure'
+        backendServiceArm: 'tushar_SP'
+        backendAzureRmResourceGroupName: 'Tushar_Backend'
+        backendAzureRmStorageAccountName: 'ppipestoragetu2'
+        backendAzureRmContainerName: 'ppipecontainer'
+        backendAzureRmKey: 'infrastructuredeploy.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: Terraform_Apply
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Infrastructure_Setup_tushar/01.Modules'
+        environmentServiceNameAzureRM: 'tushar_SP'
