@@ -1,0 +1,72 @@
+trigger:
+  none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: BuildStage
+    jobs:
+      - job: buildjob
+        steps: 
+        # - task: SonarQubePrepare@6
+        #   inputs:
+        #     SonarQube: 'sonarqubeconnection'
+        #     scannerMode: 'Other'
+        # - task: SonarQubeAnalyze@6
+        #   inputs:
+        #     jdkversion: 'JAVA_HOME_17_X64'
+        # - task: SonarQubePublish@6
+        #   inputs:
+        #     pollingTimeoutSec: '300'
+        - task: JavaToolInstaller@0
+          inputs:
+            versionSpec: '8'
+            jdkArchitectureOption: 'x64'
+            jdkSourceOption: 'PreInstalled'
+        - task: Maven@4
+          inputs:
+            mavenPomFile: 'pom.xml'
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            javaHomeOption: 'JDKVersion'
+            mavenVersionOption: 'Default'
+            mavenAuthenticateFeed: false
+            effectivePomSkip: false
+            sonarQubeRunAnalysis: false
+        # - task: CopyFiles@2
+        #   inputs:
+        #     SourceFolder: '$(Build.Repository.LocalPath)/target'
+        #     Contents: '**'
+        #     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: '$(Build.Repository.LocalPath)/target'
+            ArtifactName: 'javabuild'
+            publishLocation: 'Container'
+  
+  - stage: deploystage
+    jobs:
+      - job: deployjob
+        steps: 
+        - task: DownloadBuildArtifacts@1
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'javabuild'
+            downloadPath: '$(System.ArtifactsDirectory)'
+        - task: CopyFilesOverSSH@0
+          inputs:
+            sshEndpoint: 'ApacheMachine'
+            sourceFolder: '$(System.ArtifactsDirectory)'
+            contents: '**'
+            targetFolder: '/tmp/'
+            readyTimeout: '20000'
+        - task: SSH@0
+          inputs:
+            sshEndpoint: 'ApacheMachine'
+            runOptions: 'inline'
+            inline: |
+              sudo cp /tmp/javabuild/JavaLoginShowcase-1.0.0.war /opt/tomcat/webapps
+              sudo systemctl restart tomcat
+            readyTimeout: '20000'
