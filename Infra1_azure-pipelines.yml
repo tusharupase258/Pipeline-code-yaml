@@ -1,0 +1,88 @@
+name: Infra1_yaml_pipeline
+trigger: 
+  - main
+pool: Default
+
+stages:
+- stage: TerraformInit_plan
+  displayName: TerraformInit_Plan
+  jobs:
+  -  job: TerraformInit_Plan
+     displayName: TerraformInit_plan
+     steps:
+      - task: TerraformTaskV4@4
+        displayName: Terraform_Init
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/Practice_Codes/01.PC_20_11/01.Modules'
+          backendServiceArm: 'tushar_ado_secret1'
+          backendAzureRmResourceGroupName: 'Tushar_Backend'
+          backendAzureRmStorageAccountName: 'ppipestoragetu46'
+          backendAzureRmContainerName: 'ppipecontainer'
+          backendAzureRmKey: 'infra1.tfstate'
+
+      - task: TerraformTaskV4@4
+        displayName: Teraform_fmt
+        inputs:
+          provider: 'azurerm'
+          command: 'custom'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/Practice_Codes/01.PC_20_11/01.Modules'
+          outputTo: 'console'
+          customCommand: 'fmt'
+          environmentServiceNameAzureRM: 'tushar_ado_secret1'
+      - task: TerraformTaskV4@4
+        displayName: Terraform_validate
+        inputs:
+          provider: 'azurerm'
+          command: 'validate'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/Practice_Codes/01.PC_20_11/01.Modules'
+      - task: TerraformTaskV4@4
+        displayName: Terraform_Plan
+        inputs:
+          provider: 'azurerm'
+          command: 'plan'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/Practice_Codes/01.PC_20_11/01.Modules'
+          environmentServiceNameAzureRM: 'tushar_ado_secret1'
+
+
+- stage: Manual_Validation
+  displayName : Manual_Validation
+  dependsOn: TerraformInit_plan
+  jobs :
+  - job: Manual_Validation
+    displayName : Manual_Validation
+    pool: Server
+    steps:
+    - task: ManualValidation@1
+      inputs:
+        notifyUsers: 'tusharupase786@gmail.com,tusharupase111@gmail.com'
+        approvers: 'tusharupase786@gmail.com,tusharupase111@gmail.com'
+        allowApproversToApproveTheirOwnRuns: true
+        instructions: 'Please check the plan & approve to apply the plan.'
+
+- stage: Terraform_Apply
+  displayName : Terraform_Apply
+  dependsOn: Manual_Validation
+  jobs :
+  - job: Terraform_Re_Init
+    displayName : Terraform Re_Init & Apply
+    steps :
+    - task: TerraformTaskV4@4
+      displayName: Terraform Re_Init & Apply
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Practice_Codes/01.PC_20_11/01.Modules'
+        backendServiceArm: 'tushar_ado_secret1'
+        backendAzureRmResourceGroupName: 'Tushar_Backend'
+        backendAzureRmStorageAccountName: 'ppipestoragetu46'
+        backendAzureRmContainerName: 'ppipecontainer'
+        backendAzureRmKey: 'Infra1.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: Terraform_Apply
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Practice_Codes/01.PC_20_11/01.Modules'
+        environmentServiceNameAzureRM: 'tushar_ado_secret1'
