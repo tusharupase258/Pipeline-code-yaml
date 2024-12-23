@@ -1,0 +1,13 @@
+name : Infra8_Pre_prod_pipeline_using_templates.yaml
+trigger: none
+#  -  main
+pool: Default
+
+variables:
+  my_workdir: '$(System.DefaultWorkingDirectory)/azurerm_codes/Multi_Environment_Setup/01.Modules'
+  my_workdir2: '$(System.DefaultWorkingDirectory)/azurerm_codes/Multi_Environment_Setup'
+
+stages:
+  - template: tf.template1.yml
+    parameters:
+      Environment: Pre_prod

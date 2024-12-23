@@ -1,0 +1,117 @@
+parameters:
+- name: Environment
+
+stages:
+-  stage: Terraform_Init_Plan
+   displayName: Terraform Init & Plan
+   jobs:
+    -  job: Terraform_Init_Plan
+       displayName: Terraform Init & Plan
+       steps:
+       - task: TerraformTaskV4@4
+         displayName: Terraform_Init
+         inputs:
+           provider: 'azurerm'
+           command: 'init'
+           workingDirectory: '$(my_workdir)'
+           backendServiceArm: 'tushar_dev'
+           backendAzureRmResourceGroupName: 'Tushar_Backend'
+           backendAzureRmStorageAccountName: 'ppipestoragetu48'
+           backendAzureRmContainerName: 'ppipecontainer'
+           backendAzureRmKey: '${{parameters.Environment}}.terraform.tfstate'
+       - task: PowerShell@2
+         displayName: TFlint_Code_Linting
+         inputs:
+           targetType: 'inline'
+           script: |
+             # Download TFLint for Windows
+                   Invoke-WebRequest -Uri "https://github.com/terraform-linters/tflint/releases/download/v0.51.0/tflint_windows_amd64.zip" -OutFile "tflint.zip"
+             
+                   # Extract the zip file
+                   Expand-Archive -Path "tflint.zip" -DestinationPath "$(System.DefaultWorkingDirectory)\tflint"
+             
+                   # Add TFLint to PATH
+                   $env:PATH += ";$(System.DefaultWorkingDirectory)\tflint"
+             
+                   # Initialize and Run TFLint
+                   .\tflint\tflint.exe --init
+                   .\tflint\tflint.exe --chdir "$(System.DefaultWorkingDirectory)\azurerm_codes\Multi_Environment_Setup\01.Modules"
+       - task: TerraformTaskV4@4
+         displayName: Terraform_fmt
+         inputs:
+           provider: 'azurerm'
+           command: 'custom'
+           workingDirectory: '$(my_workdir)'
+           outputTo: 'console'
+           customCommand: 'fmt'
+           environmentServiceNameAzureRM: 'tushar_dev'
+
+       - task: TerraformTaskV4@4
+         displayName: Terraform_Validate
+         inputs:
+           provider: 'azurerm'
+           command: 'validate'
+           workingDirectory: '$(my_workdir)'
+       - task: PowerShell@2
+         displayName: Install_checkov&run scan
+         inputs:
+           targetType: 'inline'
+           script: |
+             pip install checkov
+             checkov -d '$(my_workdir2)'--soft-fail
+       - task: tfsec@1
+         displayName: Tfsec_code_scanning
+         inputs:
+           version: 'v1.26.0'
+           dir: '$(my_workdir2)'#'$(System.DefaultWorkingDirectory)/azurerm_codes/Multi_Environment_Setup'
+       - task: TerraformTaskV4@4
+         displayName: Terraform_Plan
+         inputs:
+           provider: 'azurerm'
+           command: 'plan'
+           workingDirectory: '$(my_workdir)'
+           commandOptions: '--var-file=${{parameters.Environment}}.terraform.tfvars'
+           environmentServiceNameAzureRM: 'tushar_dev'
+
+- stage: Manual_Validation
+  displayName : Manual_Validation
+  dependsOn : Terraform_Init_Plan
+  pool : server
+  jobs:
+  -  job: Manual_Validation
+     displayName: Manual_Validation
+     steps:
+     - task: ManualValidation@1
+       displayName : Manual_Validation
+       inputs:
+         notifyUsers: 'tusharupase786@gmail.com'
+         approvers: 'tusharupase786@gmail.com'
+         allowApproversToApproveTheirOwnRuns: true
+         instructions: 'Please check the plan & approve to further apply the plan'
+
+- stage: Terraform_Apply
+  displayName : Terraform_Apply
+  dependsOn: Manual_Validation
+  jobs :
+  - job: Terraform_Apply
+    displayName : Terraform_Apply
+    steps :
+    - task: TerraformTaskV4@4
+      displayName: Terraform_Re-Init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(my_workdir)'
+        backendServiceArm: 'tushar_dev'
+        backendAzureRmResourceGroupName: 'Tushar_Backend'
+        backendAzureRmStorageAccountName: 'ppipestoragetu48'
+        backendAzureRmContainerName: 'ppipecontainer'
+        backendAzureRmKey: '${{parameters.Environment}}.terraform.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: Terraform_Apply
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(my_workdir)'
+        commandOptions: '--var-file=${{parameters.Environment}}.terraform.tfvars'
+        environmentServiceNameAzureRM: 'tushar_dev'
