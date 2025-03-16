@@ -1,5 +1,3 @@
-Sure! Here's a similar README template for your `Pipeline-code-yaml` repository:
-
 ---
 
 # Pipeline-code-yaml
