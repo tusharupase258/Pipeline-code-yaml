@@ -1,0 +1,96 @@
+jobs:
+- job: Job_1
+  displayName: Agent job 1
+  pool:
+    name: Default
+  steps:
+  - checkout: self
+    fetchDepth: 1
+  - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
+    displayName: 'Terraform : Init'
+    inputs:
+      workingDirectory: environments/prod
+      backendAzureRmUseEnvironmentVariablesForAuthentication: false
+      backendAzureRmUseEntraIdForAuthentication: false
+      backendServiceArm: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmResourceGroupName: Donotdeletewipforpipe
+      backendAzureRmStorageAccountName: ppipestoragetu
+      backendAzureRmContainerName: ppipecontainer
+      backendAzureRmKey: tfprod/terraform.tfstate
+  - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
+    displayName: 'Terraform : fmt'
+    inputs:
+      command: custom
+      workingDirectory: environments/prod
+      customCommand: fmt
+      environmentServiceNameAzureRM: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmUseEnvironmentVariablesForAuthentication: false
+      backendAzureRmUseEntraIdForAuthentication: false
+      backendServiceArm: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmResourceGroupName: meraRG
+      backendAzureRmStorageAccountName: tusharstorageforpipe
+      backendAzureRmContainerName: tusharpipe
+      backendAzureRmKey: terraform.tfstate
+  - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
+    displayName: 'Terraform : validate'
+    inputs:
+      command: validate
+      workingDirectory: environments/prod
+      customCommand: fmt
+      environmentServiceNameAzureRM: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmUseEnvironmentVariablesForAuthentication: false
+      backendAzureRmUseEntraIdForAuthentication: false
+      backendServiceArm: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmResourceGroupName: meraRG
+      backendAzureRmStorageAccountName: tusharstorageforpipe
+      backendAzureRmContainerName: tusharpipe
+      backendAzureRmKey: terraform.tfstate
+  - task: PowerShell@2
+    displayName: Install terrascan
+    inputs:
+      targetType: inline
+      script: wget https://github.com/accurics/terrascan/releases
+      workingDirectory: environments/prod
+  - task: PowerShell@2
+    displayName: Scan the code through terrascan scan
+    inputs:
+      targetType: inline
+      script: >
+        terrascan scan -t azure -i terraform --severity "High"
+      errorActionPreference: default
+      workingDirectory: environments/prod
+  - task: PowerShell@2
+    displayName: Init. terrascan
+    inputs:
+      targetType: inline
+      script: terrascan init
+      workingDirectory: environments/prod
+  - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
+    displayName: 'Terraform : plan'
+    inputs:
+      command: plan
+      workingDirectory: environments/prod
+      customCommand: fmt
+      environmentServiceNameAzureRM: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmUseEnvironmentVariablesForAuthentication: false
+      backendAzureRmUseEntraIdForAuthentication: false
+      backendServiceArm: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmResourceGroupName: meraRG
+      backendAzureRmStorageAccountName: tusharstorageforpipe
+      backendAzureRmContainerName: tusharpipe
+      backendAzureRmKey: terraform.tfstate
+  - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV4@4
+    displayName: 'Terraform : apply'
+    inputs:
+      command: apply
+      workingDirectory: environments/prod
+      customCommand: terraform apply -auto-approve
+      environmentServiceNameAzureRM: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmUseEnvironmentVariablesForAuthentication: false
+      backendAzureRmUseEntraIdForAuthentication: false
+      backendServiceArm: 7fd6c5fa-c6f6-4044-b23c-9fee0322347f
+      backendAzureRmResourceGroupName: meraRG
+      backendAzureRmStorageAccountName: tusharstorageforpipe
+      backendAzureRmContainerName: tusharpipe
+      backendAzureRmKey: terraform.tfstate
+...

@@ -1,0 +1,30 @@
+name: VM Auto-start
+trigger: none
+pool: Default
+
+schedules:
+- cron: '0 7 * * *'
+  displayName: Run the pipeline & start the VM at sharp 12:30 PM IST
+  branches:
+    include:
+      - main
+  always: true
+
+variables:
+  RG_NAME: RG_EUS_VMs
+  VM_NAME: vmwus01tus
+
+stages:
+- stage: VM_Auto_Start
+  displayName: VM Auto-start
+  jobs:
+    - job: vmautostartup
+      displayName: Start VM
+      steps:
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'service principle tushar'
+          scriptType: 'ps'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az vm start --resource-group $(RG_NAME) --name $(VM_NAME)
