@@ -1,0 +1,69 @@
+name: Build&deploy pipeline
+trigger:
+  enabled: false
+pool:
+  name: default
+variables:
+- name: work_dir
+  value: $(System.DefaultWorkingDirectory)
+- name: work_dir2
+  value: $(Build.ArtifactStagingDirectory)
+stages:
+- stage: ''
+  displayName: Buildstage
+  jobs:
+  - job: ''
+    displayName: Buildjob
+    steps:
+    - task: NodeTool@0
+      displayName: InstallingNode.Js16.x
+      inputs:
+        versionSource: 'spec'
+        versionSpec: '16.x'
+    - task: Npm@1
+      displayName: NPMinstall
+      inputs:
+        command: 'install'
+        workingDir: '$(work_dir)'
+    - task: Npm@1
+      displayName: NPMrunbuild
+      inputs:
+        command: 'custom'
+        workingDir: '$(work_dir)'
+        customCommand: 'run build'
+    - task: PublishPipelineArtifact@1
+      displayName: PublishingArtifacts
+      inputs:
+        targetPath: '$(work_dir)/build'
+        artifact: 'frontendartifacts'
+        publishLocation: 'pipeline'
+    - task: PowerShell@2
+      displayName: Publishing_Build_Details
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "##vso[task.setprogress value=0;]### Build Details"
+          Write-Host "Build ID: $env:BUILD_BUILDID"
+          Write-Host "Branch: $env:BUILD_SOURCEBRANCHNAME"
+          Write-Host "Commit: $env:BUILD_SOURCEVERSION"
+- stage: ''
+  displayName: DeployStage
+  jobs:
+  - job: ''
+    displayName: Deployjob
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: DownloadingArtifacts
+      inputs:
+        buildType: 'current'
+        artifactName: 'frontendartifacts'
+        targetPath: '$(work_dir2)'
+    - task: CopyFilesOverSSH@0
+      displayName: CopyArtifactstoTargetVm
+      inputs:
+        sshEndpoint: 'todovm1'
+        sourceFolder: '$(work_dir2)'
+        contents: '**'
+        targetFolder: '/var/www/html/'
+        readyTimeout: '20000'
+
