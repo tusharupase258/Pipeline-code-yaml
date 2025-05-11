@@ -1,0 +1,39 @@
+name: UI_Build_Push_Deploy
+
+trigger: none
+
+pool: default
+
+stages:
+- stage: Docker_UI_Build_Push_stage
+  displayName: Docker_UI_Build_Push
+  jobs:
+  - job: Docker_UI_Build_Push_Deploy
+    displayName: Docker_UI_Build_Push_job
+    steps:
+    - task: Docker@2
+      displayName: Docker_UI_Build_Push
+      inputs:
+        containerRegistry: 'docker_sp1'
+        repository: 'appui'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+- stage: AKS_Deployment_ui_stage
+  displayName: AKS_Deployment_UI
+  jobs:
+  - job: AKS_Deployment_UI_job
+    displayName: AKS_Deployment_UI_job
+    steps:
+    - task: KubernetesManifest@1
+      displayName: Apply_Manifest_to_AKS
+      inputs:
+        action: 'deploy'
+        connectionType: 'kubernetesServiceConnection'
+        kubernetesServiceConnection: 'kubernetes_sp1_sc'
+        namespace: 'default'
+        manifests: 'manifests/*.yaml'
+        containers: 'devtusharacr2.azurecr.io/appui:$(Build.BuildId)'

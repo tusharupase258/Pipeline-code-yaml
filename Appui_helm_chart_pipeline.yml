@@ -1,0 +1,67 @@
+name: Appui_helm_chart_pipeline
+
+trigger: none
+
+pool: default
+
+parameters:
+  - name: environment
+    displayName: Deploy Environment
+    type: string
+    default: 'prod'
+    values:
+      - dev
+      - stage
+      - prod
+
+variables:
+  helmChartPath: '$(Build.SourcesDirectory)/APPUI_Helm'
+  namespace: ${{ parameters.environment }}
+  
+
+stages:
+- stage: HelmDeploy
+  displayName: Deploy to ${{ parameters.environment }}
+  jobs:
+  - job: Deploy_Helm_Chart
+    displayName: Deploy Helm Chart
+    steps:
+    
+    - task: Kubernetes@1
+      displayName: Set Kubernetes Context
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: 'kubernetes_sp1_sc'
+        namespace: '$(namespace)'
+        command: 'login'
+
+    - task: PowerShell@2
+      displayName: Helm Deployment
+      inputs:
+        targetType: 'inline'
+        script: |
+          $releaseName = "appui-$env:namespace"
+          $chartPath = $env:helmChartPath
+          $namespace = $env:namespace
+      
+          if ($namespace -eq "dev") {
+            $valuesFile = "$chartPath/dev-values.yaml"
+          } elseif ($namespace -eq "stage") {
+            $valuesFile = "$chartPath/stage-values.yaml"
+          } elseif ($namespace -eq "prod") {
+            $valuesFile = "$chartPath/prod-values.yaml"
+          } else {
+            throw "Invalid environment specified: $namespace"
+          }
+      
+          Write-Host "Rendering Helm Chart..."
+          helm template $releaseName $chartPath -f $valuesFile --namespace $namespace
+      
+          $releaseExists = helm list --namespace $namespace | Select-String $releaseName
+          if ($releaseExists) {
+              Write-Host "Release exists. Upgrading..."
+              helm upgrade $releaseName $chartPath -f $valuesFile --namespace $namespace
+          } else {
+              Write-Host "Release does not exist. Installing..."
+              helm install $releaseName $chartPath -f $valuesFile --namespace $namespace
+          }
