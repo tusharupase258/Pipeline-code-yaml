@@ -1,0 +1,31 @@
+name: argocd_application_yml_deploy
+trigger: none
+pool: self_hosted_tushar
+
+parameters:
+- name: helm_prod_dev_manifests
+  displayName: Select_Files
+  type: string
+  default: manifests_application
+  values:
+    - manifests_application
+    - dev_application
+    - prod_application
+
+variables:
+- name: app_dir
+  value: '$(System.DefaultWorkingDirectory)/Startbucks/application_argocd'
+
+
+stages:
+- stage: Argocd_app_deploy_stage
+  displayName: Argocd_app_deploy_stage
+  jobs:
+  - job: Argocd_app_deploy_job
+    displayName: Argocd_app_deploy_job
+    steps:
+    - task: PowerShell@2
+      displayName: Argocd_app_deploy_kubectl
+      inputs:
+        targetType: 'inline'
+        script: 'kubectl apply -f $(app_dir)/${{ parameters.helm_prod_dev_manifests }}.yml'
