@@ -1,0 +1,42 @@
+trigger: none
+
+pool:
+  name: self_hosted_tushar
+
+variables:
+  image_version: "1.0.$(Build.BuildId)"
+
+steps:
+
+- task: PackerTool@0
+  displayName: Install Packer
+  inputs:
+    version:
+
+- task: Packer@1
+  displayName: Packer_Init
+  inputs:
+    connectedServiceType: 'azure'
+    azureSubscription: 'packer-sp_latest'
+    templatePath: 'azure-image.pkr.hcl'
+    command: 'init'
+
+- task: Packer@1
+  displayName: Packer Validate
+  inputs:
+    connectedServiceType: 'azure'
+    azureSubscription: 'packer-sp_latest'
+    templatePath: 'azure-image.pkr.hcl'
+    command: 'validate'
+    variables: 'image_version=$(image_version)'
+
+- task: Packer@1
+  displayName: Build_Push
+  continueOnError: true
+  inputs:
+    connectedServiceType: 'azure'
+    azureSubscription: 'packer-sp_latest'
+    templatePath: 'azure-image.pkr.hcl'
+    command: 'build'
+    force: true
+    variables: 'image_version=$(image_version)'
