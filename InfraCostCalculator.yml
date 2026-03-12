@@ -1,0 +1,72 @@
+name: InfraCostCalculator
+trigger: none
+pool: self_hosted_tushar
+
+variables:
+- group: tushar_backend
+- group: INFRACOST_API_KEY
+- name: work_dir
+  value: '$(System.DefaultWorkingDirectory)/01.Modules'
+
+stages:
+- stage: TerraformInit
+  displayName: 'Terraform Init and Cost Estimation'
+  jobs:
+  - job: TerraformInit
+    displayName: 'Terraform Workflow'
+    steps:
+    - task: TerraformTask@5
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(work_dir)'
+        backendAzureRmUseEntraIdForAuthentication: false
+        backendServiceArm: 'tushar_sc_new1'
+        backendAzureRmOverrideSubscriptionID: '$(subscription_id)'
+        backendAzureRmResourceGroupName: '$(resource_group_name)'
+        backendAzureRmStorageAccountName: '$(storage_account_name)'
+        backendAzureRmContainerName: '$(container_name)'
+        backendAzureRmKey: 'infracost26.tfstate'
+
+    - task: TerraformTask@5
+      displayName: 'Terraform Format'
+      inputs:
+        provider: 'azurerm'
+        command: 'custom'
+        workingDirectory: '$(work_dir)'
+        outputTo: 'console'
+        customCommand: 'fmt'
+        environmentServiceNameAzureRM: 'tushar_sc_new1'
+
+    - task: TerraformTask@5
+      displayName: 'Terraform Validate'
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+        workingDirectory: '$(work_dir)'
+
+    - task: TerraformTask@5
+      displayName: 'Terraform Plan'
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: '$(work_dir)'
+        commandOptions: '-out=tfplan.binary'
+        environmentServiceNameAzureRM: 'tushar_sc_new1'
+
+    - task: InfracostSetup@2
+      displayName: 'Setup Infracost'
+      inputs:
+        apiKey: '$(INFRACOST_API_KEY)'
+        version: '0.10.x'
+        currency: 'INR'
+
+    - task: PowerShell@2
+      displayName: 'Generate Infracost Report'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Convert plan to JSON and pipe directly to Infracost
+          terraform show -json tfplan.binary | infracost breakdown --path=tfplan.binary
+        workingDirectory: '$(work_dir)'
